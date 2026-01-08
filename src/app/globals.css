@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
+/* Placeholder Styles */
+.tiptap p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Paragraph Spacing for Enter behavior */
+.ProseMirror p {
+  margin-bottom: 1em;
+}
+
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --page-width: 816px;
+  --page-height: 1056px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+
+/* Screen-only styles */
+@media screen {
+  .print-only {
+    display: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Print styles */
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  body {
+    background: none;
+  }
+
+  /* Hide UI elements during print */
+  .screen-only {
+    display: none !important;
+  }
+
+  /* Ensure pages break correctly */
+  .page-break {
+    break-after: always;
+    page-break-after: always;
+  }
+
+  /* Reset page container for print */
+  .print-page {
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
 }
