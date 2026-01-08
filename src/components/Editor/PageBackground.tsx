@@ -13,15 +13,20 @@ export const PageBackground: React.FC<PageBackgroundProps> = ({ totalPages }) =>
             {pages.map((pageIndex) => (
                 <div
                     key={pageIndex}
-                    className="bg-white shadow-md print:shadow-none print:m-0"
+                    className="bg-white shadow-md print:shadow-none print:m-0 flex flex-col justify-between relative"
                     style={{
                         width: '816px',
                         height: '1056px',
-                        // No margin/padding here, handled by the Editor container's internal padding mostly,
-                        // but effectively this is the "Paper".
-                        // Implementation note: The gap-4 in parent creates the visual separation.
                     }}
-                />
+                >
+                    {/* Visual Header Area */}
+                    <div className="h-24 w-full border-b border-gray-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    {/* Visual Footer Area */}
+                    <div className="h-24 w-full border-t border-gray-50 flex items-end justify-center pb-8 text-xs text-gray-400">
+                        Page {pageIndex + 1} of {totalPages}
+                    </div>
+                </div>
             ))}
         </div>
     );

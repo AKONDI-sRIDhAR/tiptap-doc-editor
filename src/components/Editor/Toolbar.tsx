@@ -73,6 +73,29 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
             >
                 Ordered List
             </ToolbarButton>
+            <div className="w-px h-5 bg-gray-300 mx-1" />
+            <ToolbarButton
+                onClick={() => editor.chain().focus().setMark('textStyle', { fontSize: '20px' }).run()}
+                isActive={editor.isActive('textStyle', { fontSize: '20px' })}
+            >
+                Big
+            </ToolbarButton>
+            <ToolbarButton
+                onClick={() => editor.chain().focus().unsetMark('textStyle').run()}
+            >
+                Normal
+            </ToolbarButton>
+            <div className="w-px h-5 bg-gray-300 mx-1" />
+            <ToolbarButton
+                onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            >
+                Add Table
+            </ToolbarButton>
+            <ToolbarButton
+                onClick={() => editor.chain().focus().deleteTable().run()}
+            >
+                Del Table
+            </ToolbarButton>
         </div>
     );
 };
