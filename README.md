@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
+# Document Editor
 
-## Project info
+A rich-text document editor built with **Next.js 15**, **Tailwind CSS**, and **Tiptap**.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+This project provides a "Word-like" writing experience with print-accurate pagination and export capabilities.
 
-## How can I edit this code?
+## Getting Started
 
-There are several ways of editing your application.
+### Prerequisites
 
-**Use Lovable**
+- Node.js 18+
+- npm
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Installation
 
-Changes made via Lovable will be committed automatically to this repo.
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/yourusername/doc-editor.git
+    cd doc-editor
+    ```
 
-**Use your preferred IDE**
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+4.  Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Follow these steps:
+## Technical Approach: Pagination & Page Breaks
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+One of the core challenges in a browser-based editor is ensuring that what you see on the screen matches exactly what comes out of the printer (WYSIWYG).
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### How It Works
 
-# Step 3: Install the necessary dependencies.
-npm i
+Instead of treating the editor as one long scrollable text area (like a standard webpage), we enforce a "page-based" layout using CSS and specific dimensions.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1.  **CSS Dimensions**: We define a page container with fixed dimensions matching standard US Letter paper (`8.5in` x `11in`), including localized padding for margins.
+2.  **Visual Separation**: The editor renders these pages as distinct cards with shadows, mimicking a physical desk view.
+3.  **Content Flow**: While the current implementation relies on Tiptap's document model, visual pagination acts as a strict guide. We style the editor container to behave like a series of pages.
+4.  **Print Styles**: We use a dedicated `@media print` stylesheet that strips away the UI (toolbars, shadows, background colors) and sets the page size to `letter`, ensuring the browser's print driver respects our breakpoints.
 
-**Edit a file directly in GitHub**
+### Trade-offs & Limitations
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+-   **Browser Rendering Differences**: While we force dimensions, font rendering (kerning, line height) can vary slightly between Chrome, Firefox, and Safari. This might cause a line of text to wrap on one browser but not another.
+-   **Client-Side Heavy**: The pagination logic is primarily visual. True "content-aware" splitting (automatically moving a paragraph to the next page if it crosses a boundary) is ensuring by visual cues rather than a strict physics engine, meaning users sometimes have to manually adjust breaks.
+-   **Performance**: Rendering very long documents (100+ pages) as a single DOM tree can be memory-intensive.
 
-**Use GitHub Codespaces**
+### Future Improvements
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+If I had more time to dedicate to this project, here is what I would tackle next:
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+-   **Virtualization**: Implementing a virtual scroller to only render the pages currently in the viewport. This would drastically improve performance for long documents.
+-   **Server-Side PDF Generation**: Currently, we rely on client-side export. Moving this to a Node.js service (using Puppeteer or Playwright) would generate byte-perfect PDFs identical to the print view, effectively solving cross-browser rendering quirks.
+-   **Collaborative Editing**: Integrating Tiptap's collaboration (Y.js) to support real-time multiplayer editing using WebSockets.
