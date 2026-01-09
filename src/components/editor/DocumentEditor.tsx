@@ -1,65 +1,54 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import Document from '@tiptap/extension-document';
-import Paragraph from '@tiptap/extension-paragraph';
-import Text from '@tiptap/extension-text';
-import Bold from '@tiptap/extension-bold';
-import Italic from '@tiptap/extension-italic';
+import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
-import Strike from '@tiptap/extension-strike';
-import Heading from '@tiptap/extension-heading';
-import BulletList from '@tiptap/extension-bullet-list';
-import OrderedList from '@tiptap/extension-ordered-list';
-import ListItem from '@tiptap/extension-list-item';
-import History from '@tiptap/extension-history';
+import TextStyle from '@tiptap/extension-text-style';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
-import HardBreak from '@tiptap/extension-hard-break';
-import TextStyle from '@tiptap/extension-text-style';
-import Gapcursor from '@tiptap/extension-gapcursor';
 import EditorToolbar from './EditorToolbar';
+import TableMenu from './TableMenu';
 import { useTheme } from '@/hooks/useTheme';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// Page dimensions at 96 DPI
-const PAGE_WIDTH = 816; // 8.5 inches
-const PAGE_HEIGHT = 1056; // 11 inches
-const PAGE_MARGIN = 96; // 1 inch
+// Page dimensions at 96 DPI - US Letter
+const PAGE_WIDTH = 816;
+const PAGE_HEIGHT = 1056;
+const PAGE_MARGIN = 96;
 const CONTENT_HEIGHT = PAGE_HEIGHT - (2 * PAGE_MARGIN);
 const CONTENT_WIDTH = PAGE_WIDTH - (2 * PAGE_MARGIN);
 const PAGE_GAP = 40;
+const HEADER_HEIGHT = 24;
+const FOOTER_HEIGHT = 24;
 
 const DocumentEditor: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [documentTitle, setDocumentTitle] = useState('Untitled document');
   const [pageCount, setPageCount] = useState(1);
+  const [headerText] = useState('');
+  const [footerText] = useState('');
   const measureRef = useRef<HTMLDivElement>(null);
   const pagesContainerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
-      Document,
-      Paragraph,
-      Text,
-      Bold,
-      Italic,
-      Underline,
-      Strike,
-      Heading.configure({
-        levels: [1, 2, 3, 4, 5, 6],
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3, 4, 5, 6],
+        },
+        codeBlock: false,
+        code: false,
       }),
-      BulletList,
-      OrderedList,
-      ListItem,
-      History,
-      HardBreak,
+      Underline,
       TextStyle,
-      Gapcursor,
       Table.configure({
         resizable: true,
+        HTMLAttributes: {
+          class: 'tiptap-table',
+        },
       }),
       TableRow,
       TableCell,
@@ -68,8 +57,8 @@ const DocumentEditor: React.FC = () => {
     content: '',
     editorProps: {
       attributes: {
-        class: 'tiptap-editor focus:outline-none min-h-[200px]',
-        style: 'font-family: "Times New Roman", Georgia, serif; font-size: 12pt; line-height: 1.5;',
+        class: 'tiptap-editor focus:outline-none',
+        style: 'font-family: "Times New Roman", Georgia, serif; font-size: 12pt; line-height: 1.6;',
       },
     },
     onUpdate: () => {
@@ -78,35 +67,50 @@ const DocumentEditor: React.FC = () => {
   });
 
   const measureContent = useCallback(() => {
-    if (measureRef.current) {
-      const height = measureRef.current.scrollHeight;
-      const pages = Math.max(1, Math.ceil(height / CONTENT_HEIGHT));
+    if (contentRef.current) {
+      const height = contentRef.current.scrollHeight;
+      const usableHeight = CONTENT_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT;
+      const pages = Math.max(1, Math.ceil(height / usableHeight));
       setPageCount(pages);
     }
   }, []);
 
   useEffect(() => {
     measureContent();
-    if (typeof document !== 'undefined') {
-      document.fonts?.ready.then(measureContent);
-    }
+    document.fonts?.ready.then(measureContent);
   }, [measureContent]);
 
   useEffect(() => {
-    if (measureRef.current) {
+    if (contentRef.current) {
       const resizeObserver = new ResizeObserver(measureContent);
-      resizeObserver.observe(measureRef.current);
+      resizeObserver.observe(contentRef.current);
       return () => resizeObserver.disconnect();
     }
-  }, [measureContent]);
+  }, [measureContent, editor]);
+
+  // Re-measure when editor content changes
+  useEffect(() => {
+    if (editor) {
+      const updateHandler = () => {
+        requestAnimationFrame(measureContent);
+      };
+      editor.on('update', updateHandler);
+      editor.on('selectionUpdate', updateHandler);
+      return () => {
+        editor.off('update', updateHandler);
+        editor.off('selectionUpdate', updateHandler);
+      };
+    }
+  }, [editor, measureContent]);
 
   const handleExportPDF = useCallback(async () => {
-    if (!pagesContainerRef.current) return;
+    if (!pagesContainerRef.current || !editor) return;
 
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'px',
       format: [PAGE_WIDTH, PAGE_HEIGHT],
+      hotfixes: ['px_scaling'],
     });
 
     const pages = pagesContainerRef.current.querySelectorAll('.document-page');
@@ -114,17 +118,37 @@ const DocumentEditor: React.FC = () => {
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i] as HTMLElement;
       
-      // Temporarily set white background for PDF
+      // Store original styles
       const originalBg = page.style.background;
+      const allElements = page.querySelectorAll('*');
+      const originalColors: string[] = [];
+      
+      // Set print styles
       page.style.background = 'white';
+      allElements.forEach((el, idx) => {
+        const htmlEl = el as HTMLElement;
+        originalColors[idx] = htmlEl.style.color;
+        if (htmlEl.classList.contains('tiptap-editor') || 
+            htmlEl.closest('.tiptap-editor') ||
+            htmlEl.classList.contains('page-number') ||
+            htmlEl.classList.contains('document-header') ||
+            htmlEl.classList.contains('document-footer')) {
+          htmlEl.style.color = '#000000';
+        }
+      });
       
       const canvas = await html2canvas(page, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
+        logging: false,
       });
       
+      // Restore original styles
       page.style.background = originalBg;
+      allElements.forEach((el, idx) => {
+        (el as HTMLElement).style.color = originalColors[idx];
+      });
       
       const imgData = canvas.toDataURL('image/png');
       
@@ -137,7 +161,7 @@ const DocumentEditor: React.FC = () => {
 
     const filename = documentTitle.trim() || 'Untitled document';
     pdf.save(`${filename}.pdf`);
-  }, [documentTitle]);
+  }, [documentTitle, editor]);
 
   const handleTitleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -145,6 +169,8 @@ const DocumentEditor: React.FC = () => {
       editor?.commands.focus();
     }
   };
+
+  const usableContentHeight = CONTENT_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT;
 
   return (
     <div className="flex flex-col h-screen bg-workspace">
@@ -169,6 +195,20 @@ const DocumentEditor: React.FC = () => {
         onExportPDF={handleExportPDF}
       />
 
+      {/* Table Bubble Menu */}
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          tippyOptions={{ 
+            duration: 100,
+            placement: 'top',
+          }}
+          shouldShow={({ editor }) => editor.isActive('table')}
+        >
+          <TableMenu editor={editor} />
+        </BubbleMenu>
+      )}
+
       {/* Pages Container */}
       <div className="flex-1 overflow-auto py-8">
         <div
@@ -176,7 +216,6 @@ const DocumentEditor: React.FC = () => {
           className="mx-auto"
           style={{ width: `${PAGE_WIDTH}px` }}
         >
-          {/* Render pages */}
           {Array.from({ length: pageCount }, (_, pageIndex) => {
             const isLastPage = pageIndex === pageCount - 1;
 
@@ -190,6 +229,19 @@ const DocumentEditor: React.FC = () => {
                     marginBottom: isLastPage ? 0 : `${PAGE_GAP}px`,
                   }}
                 >
+                  {/* Header */}
+                  <div
+                    className="document-header absolute left-0 right-0 flex items-center justify-center"
+                    style={{
+                      top: `${PAGE_MARGIN / 2}px`,
+                      height: `${HEADER_HEIGHT}px`,
+                      paddingLeft: `${PAGE_MARGIN}px`,
+                      paddingRight: `${PAGE_MARGIN}px`,
+                    }}
+                  >
+                    {headerText}
+                  </div>
+
                   {/* Content area with clipping */}
                   <div
                     className="absolute overflow-hidden"
@@ -197,25 +249,27 @@ const DocumentEditor: React.FC = () => {
                       top: `${PAGE_MARGIN}px`,
                       left: `${PAGE_MARGIN}px`,
                       width: `${CONTENT_WIDTH}px`,
-                      height: `${CONTENT_HEIGHT}px`,
+                      height: `${usableContentHeight}px`,
                     }}
                   >
                     <div
-                      ref={pageIndex === 0 ? measureRef : undefined}
+                      ref={pageIndex === 0 ? contentRef : undefined}
                       style={{
-                        transform: `translateY(-${pageIndex * CONTENT_HEIGHT}px)`,
+                        transform: `translateY(-${pageIndex * usableContentHeight}px)`,
                         width: `${CONTENT_WIDTH}px`,
                       }}
                     >
                       {pageIndex === 0 ? (
-                        <EditorContent editor={editor} />
+                        <div ref={measureRef}>
+                          <EditorContent editor={editor} />
+                        </div>
                       ) : (
                         <div
                           className="tiptap-editor pointer-events-none select-none"
                           style={{ 
                             fontFamily: '"Times New Roman", Georgia, serif',
                             fontSize: '12pt',
-                            lineHeight: 1.5,
+                            lineHeight: 1.6,
                           }}
                           dangerouslySetInnerHTML={{ __html: editor?.getHTML() || '' }}
                         />
@@ -223,12 +277,26 @@ const DocumentEditor: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Footer */}
+                  <div
+                    className="document-footer absolute left-0 right-0 flex items-center justify-center"
+                    style={{
+                      bottom: `${PAGE_MARGIN / 2}px`,
+                      height: `${FOOTER_HEIGHT}px`,
+                      paddingLeft: `${PAGE_MARGIN}px`,
+                      paddingRight: `${PAGE_MARGIN}px`,
+                    }}
+                  >
+                    {footerText}
+                  </div>
+
                   {/* Page number */}
                   <div
-                    className="absolute left-0 right-0 text-center text-sm no-print"
+                    className="page-number absolute left-0 right-0 text-center"
                     style={{
-                      bottom: `${PAGE_MARGIN / 2 - 8}px`,
-                      color: '#666',
+                      bottom: `${PAGE_MARGIN / 4}px`,
+                      fontSize: '10pt',
+                      color: 'hsl(var(--muted-foreground))',
                     }}
                   >
                     {pageIndex + 1}
@@ -262,7 +330,7 @@ const DocumentEditor: React.FC = () => {
 
       {/* Status bar */}
       <div className="no-print flex items-center justify-between px-4 py-1.5 bg-toolbar border-t border-toolbar-border text-xs text-muted-foreground">
-        <span>US Letter • 8.5" × 11" • 1" margins</span>
+        <span>US Letter (8.5" × 11") | 1" margins</span>
         <span>{pageCount} {pageCount === 1 ? 'page' : 'pages'}</span>
       </div>
     </div>

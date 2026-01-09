@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Editor } from '@tiptap/react';
+import { Editor } from '@tiptap/react';
 import { 
   Undo2, 
   Redo2, 
@@ -116,7 +116,7 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
 
   if (!editor) return null;
 
-  const getCurrentHeading = () => {
+  const getCurrentHeading = (): string => {
     for (let i = 1; i <= 6; i++) {
       if (editor.isActive('heading', { level: i })) {
         return `Heading ${i}`;
@@ -125,34 +125,39 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
     return 'Normal text';
   };
 
-  const getCurrentFontSize = () => {
+  const getCurrentFontSize = (): string => {
     const attrs = editor.getAttributes('textStyle');
-    if (attrs.fontSize) {
-      return attrs.fontSize.replace('pt', '');
+    if (attrs && attrs.fontSize) {
+      return String(attrs.fontSize).replace('pt', '');
     }
     return '12';
   };
 
   const setHeading = (value: string, level: number) => {
     if (value === 'paragraph') {
-      (editor.chain().focus() as any).setParagraph().run();
+      editor.chain().focus().setParagraph().run();
     } else {
-      (editor.chain().focus() as any).toggleHeading({ level }).run();
+      editor.chain().focus().toggleHeading({ level: level as 1 | 2 | 3 | 4 | 5 | 6 }).run();
     }
     setHeadingOpen(false);
   };
 
   const setFontSize = (size: string) => {
-    (editor.chain().focus() as any).setMark('textStyle', { fontSize: `${size}pt` }).run();
+    editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
     setFontSizeOpen(false);
   };
 
   const insertTable = () => {
-    const rows = parseInt(tableRows) || 3;
-    const cols = parseInt(tableCols) || 3;
-    (editor.chain().focus() as any).insertTable({ rows, cols, withHeaderRow: true }).run();
+    const rows = Math.max(1, parseInt(tableRows) || 3);
+    const cols = Math.max(1, parseInt(tableCols) || 3);
+    editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
     setTableOpen(false);
+    setTableRows('3');
+    setTableCols('3');
   };
+
+  const canUndo = editor.can().undo();
+  const canRedo = editor.can().redo();
 
   return (
     <div className="no-print flex items-center gap-1 px-3 py-2 bg-toolbar border-b border-toolbar-border flex-wrap">
@@ -168,15 +173,15 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
 
       {/* Undo / Redo */}
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as any).undo().run()}
-        disabled={!(editor as any).can().undo()}
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!canUndo}
         title="Undo (Ctrl+Z)"
       >
         <Undo2 className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as any).redo().run()}
-        disabled={!(editor as any).can().redo()}
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!canRedo}
         title="Redo (Ctrl+Y)"
       >
         <Redo2 className="h-4 w-4" />
@@ -196,7 +201,7 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
             onClick={() => setHeading(h.value, h.level)}
             className={cn(
               "px-3 py-2 text-sm cursor-pointer hover:bg-accent",
-              ((h.value === 'paragraph' && editor.isActive('paragraph')) ||
+              ((h.value === 'paragraph' && !editor.isActive('heading')) ||
                 (h.value === 'heading' && editor.isActive('heading', { level: h.level }))) &&
                 "bg-accent font-medium"
             )}
@@ -230,28 +235,28 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
 
       {/* Formatting Buttons */}
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as any).toggleBold().run()}
+        onClick={() => editor.chain().focus().toggleBold().run()}
         active={editor.isActive('bold')}
         title="Bold (Ctrl+B)"
       >
         <Bold className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as any).toggleItalic().run()}
+        onClick={() => editor.chain().focus().toggleItalic().run()}
         active={editor.isActive('italic')}
         title="Italic (Ctrl+I)"
       >
         <Italic className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as any).toggleUnderline().run()}
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
         active={editor.isActive('underline')}
         title="Underline (Ctrl+U)"
       >
         <Underline className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as any).toggleStrike().run()}
+        onClick={() => editor.chain().focus().toggleStrike().run()}
         active={editor.isActive('strike')}
         title="Strikethrough"
       >
@@ -268,7 +273,7 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
       >
         <div
           onClick={() => {
-            (editor.chain().focus() as any).toggleBulletList().run();
+            editor.chain().focus().toggleBulletList().run();
             setListOpen(false);
           }}
           className={cn(
@@ -276,11 +281,11 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
             editor.isActive('bulletList') && "bg-accent font-medium"
           )}
         >
-          • Bulleted list
+          Bulleted list
         </div>
         <div
           onClick={() => {
-            (editor.chain().focus() as any).toggleOrderedList().run();
+            editor.chain().focus().toggleOrderedList().run();
             setListOpen(false);
           }}
           className={cn(
@@ -288,7 +293,7 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
             editor.isActive('orderedList') && "bg-accent font-medium"
           )}
         >
-          1. Numbered list
+          Numbered list
         </div>
       </Dropdown>
 
@@ -314,17 +319,17 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
               onChange={(e) => setTableRows(e.target.value)}
               min="1"
               max="20"
-              className="w-14 h-8 px-2 text-sm border border-border rounded bg-background"
+              className="w-14 h-8 px-2 text-sm border border-border rounded bg-background text-foreground"
               placeholder="Rows"
             />
-            <span className="text-sm text-muted-foreground">×</span>
+            <span className="text-sm text-muted-foreground">x</span>
             <input
               type="number"
               value={tableCols}
               onChange={(e) => setTableCols(e.target.value)}
               min="1"
               max="10"
-              className="w-14 h-8 px-2 text-sm border border-border rounded bg-background"
+              className="w-14 h-8 px-2 text-sm border border-border rounded bg-background text-foreground"
               placeholder="Cols"
             />
           </div>
