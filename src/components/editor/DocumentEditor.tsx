@@ -9,6 +9,7 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import EditorToolbar from './EditorToolbar';
 import TableMenu from './TableMenu';
+import { FontSize } from './extensions';
 import { useTheme } from '@/hooks/useTheme';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -44,6 +45,7 @@ const DocumentEditor: React.FC = () => {
       }),
       Underline,
       TextStyle,
+      FontSize,
       Table.configure({
         resizable: true,
         HTMLAttributes: {
@@ -114,48 +116,48 @@ const DocumentEditor: React.FC = () => {
     });
 
     const pages = pagesContainerRef.current.querySelectorAll('.document-page');
-    
+
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i] as HTMLElement;
-      
+
       // Store original styles
       const originalBg = page.style.background;
       const allElements = page.querySelectorAll('*');
       const originalColors: string[] = [];
-      
+
       // Set print styles
       page.style.background = 'white';
       allElements.forEach((el, idx) => {
         const htmlEl = el as HTMLElement;
         originalColors[idx] = htmlEl.style.color;
-        if (htmlEl.classList.contains('tiptap-editor') || 
-            htmlEl.closest('.tiptap-editor') ||
-            htmlEl.classList.contains('page-number') ||
-            htmlEl.classList.contains('document-header') ||
-            htmlEl.classList.contains('document-footer')) {
+        if (htmlEl.classList.contains('tiptap-editor') ||
+          htmlEl.closest('.tiptap-editor') ||
+          htmlEl.classList.contains('page-number') ||
+          htmlEl.classList.contains('document-header') ||
+          htmlEl.classList.contains('document-footer')) {
           htmlEl.style.color = '#000000';
         }
       });
-      
+
       const canvas = await html2canvas(page, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
       });
-      
+
       // Restore original styles
       page.style.background = originalBg;
       allElements.forEach((el, idx) => {
         (el as HTMLElement).style.color = originalColors[idx];
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
-      
+
       if (i > 0) {
         pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
       }
-      
+
       pdf.addImage(imgData, 'PNG', 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
     }
 
@@ -199,7 +201,7 @@ const DocumentEditor: React.FC = () => {
       {editor && (
         <BubbleMenu
           editor={editor}
-          tippyOptions={{ 
+          tippyOptions={{
             duration: 100,
             placement: 'top',
           }}
@@ -266,7 +268,7 @@ const DocumentEditor: React.FC = () => {
                       ) : (
                         <div
                           className="tiptap-editor pointer-events-none select-none"
-                          style={{ 
+                          style={{
                             fontFamily: '"Times New Roman", Georgia, serif',
                             fontSize: '12pt',
                             lineHeight: 1.6,
