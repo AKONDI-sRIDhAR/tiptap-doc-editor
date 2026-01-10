@@ -141,7 +141,7 @@ self.__SERVER_FILES_MANIFEST={
     }
   },
   "appDir": "F:\\antigravity\\doc-editor",
-  "relativeAppDir": "",
+  "relativeAppDir": "doc-editor",
   "files": [
     ".next\\routes-manifest.json",
     ".next\\server\\pages-manifest.json",

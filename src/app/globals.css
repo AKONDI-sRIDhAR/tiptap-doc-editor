@@ -34,11 +34,6 @@
     --page-shadow: 220 14% 60%;
     --workspace-bg: 220 14% 90%;
     --editor-text: 0 0% 0%;
-    
-    /* Page dimensions - US Letter */
-    --page-width: 816px;
-    --page-height: 1056px;
-    --page-margin: 96px;
   }
 
   .dark {
@@ -84,189 +79,217 @@
   }
 }
 
-/* Tiptap Editor Styles */
-.tiptap-editor {
-  @apply outline-none;
+
+.ProseMirror {
+  outline: none;
   color: hsl(var(--editor-text));
-  caret-color: hsl(var(--editor-text));
 }
 
-.tiptap-editor * {
-  color: inherit;
-}
-
-.tiptap-editor p {
-  @apply my-0 leading-relaxed;
-  margin-bottom: 0.75em;
-}
-
-.tiptap-editor p:last-child {
-  margin-bottom: 0;
-}
-
-.tiptap-editor h1 {
+.ProseMirror h1 {
   font-size: 2em;
   font-weight: bold;
   margin-top: 0.67em;
-  margin-bottom: 0.33em;
+  margin-bottom: 0.67em;
 }
 
-.tiptap-editor h1:first-child {
-  margin-top: 0;
-}
-
-.tiptap-editor h2 {
+.ProseMirror h2 {
   font-size: 1.5em;
   font-weight: bold;
   margin-top: 0.83em;
-  margin-bottom: 0.33em;
+  margin-bottom: 0.83em;
 }
 
-.tiptap-editor h3 {
+.ProseMirror h3 {
   font-size: 1.17em;
   font-weight: bold;
   margin-top: 1em;
-  margin-bottom: 0.33em;
+  margin-bottom: 1em;
 }
 
-.tiptap-editor h4 {
+.ProseMirror h4 {
   font-size: 1em;
   font-weight: bold;
   margin-top: 1.33em;
-  margin-bottom: 0.33em;
+  margin-bottom: 1.33em;
 }
 
-.tiptap-editor h5 {
+.ProseMirror h5 {
   font-size: 0.83em;
   font-weight: bold;
   margin-top: 1.67em;
-  margin-bottom: 0.33em;
+  margin-bottom: 1.67em;
 }
 
-.tiptap-editor h6 {
+.ProseMirror h6 {
   font-size: 0.67em;
   font-weight: bold;
   margin-top: 2.33em;
-  margin-bottom: 0.33em;
+  margin-bottom: 2.33em;
 }
 
-.tiptap-editor ul {
-  @apply list-disc pl-6 my-2;
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
 
-.tiptap-editor ol {
-  @apply list-decimal pl-6 my-2;
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
 
-.tiptap-editor li {
-  @apply my-1;
+.ProseMirror li {
+  /* No specific styles needed usually, inherits */
 }
 
-.tiptap-editor li p {
-  margin-bottom: 0;
+.ProseMirror table {
+  border-collapse: collapse;
+  margin: 0;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
 }
 
-.tiptap-editor hr {
-  @apply my-6;
-  border-color: hsl(var(--border));
-}
-
-.tiptap-editor table {
-  @apply border-collapse w-full my-4;
-  border: 1px solid hsl(var(--border));
-}
-
-.tiptap-editor th,
-.tiptap-editor td {
-  border: 1px solid hsl(var(--border));
-  padding: 8px 12px;
-  text-align: left;
-  min-width: 50px;
+.ProseMirror td,
+.ProseMirror th {
+  border: 1px solid hsl(var(--editor-text));
+  /* Use editor text color for border to adapt to theme */
+  box-sizing: border-box;
+  min-width: 1em;
+  padding: 3px 5px;
+  position: relative;
   vertical-align: top;
 }
 
-.tiptap-editor th {
-  font-weight: 600;
-  background: hsl(var(--muted));
+.ProseMirror th {
+  background-color: hsl(var(--muted));
+  font-weight: bold;
+  text-align: left;
 }
 
-.tiptap-editor .selectedCell {
-  background: hsl(var(--accent));
-}
-
-/* Document page styling */
-.document-page {
-  width: var(--page-width);
-  min-height: var(--page-height);
-  background: hsl(var(--page-bg));
-  border: 1px solid hsl(var(--page-border));
-  box-shadow: 0 2px 8px -2px hsl(var(--page-shadow) / 0.2),
-              0 4px 16px -4px hsl(var(--page-shadow) / 0.15);
-  position: relative;
-}
-
-/* Header/Footer styling */
-.document-header,
-.document-footer {
-  color: hsl(var(--muted-foreground));
-  font-size: 10pt;
-  text-align: center;
-}
-
-/* Print styles - always white page, black text */
 @media print {
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  .page-number {
+    position: absolute !important;
+    bottom: 50mm !important;
+    left: 0 !important;
+    right: 0 !important;
+    text-align: center !important;
   }
-  
+
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
   body {
-    background: white !important;
+    background-color: white !important;
+    color: black !important;
   }
-  
+
+  /* Hide Toolbar and other UI marked with no-print */
   .no-print {
     display: none !important;
   }
-  
-  .document-page {
+
+  /* Hide Table Menus / Bubble Menus */
+  [data-tippy-root],
+  .tippy-box {
+    display: none !important;
+  }
+
+  /* Reset layout containers to allow full page print */
+  /* Remove flex, fixed heights, overrides */
+  body>div,
+  div[class*="h-screen"],
+  div[class*="overflow-auto"] {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
+  }
+
+  /* Remove padding from workspace */
+  div[class*="p-8"] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide workspace background */
+  div[class*="bg-[var(--workspace-bg)]"] {
+    background: transparent !important;
+  }
+
+  /* Target the Page Wrapper to fix visuals and anchor page numbers */
+  div[class*="min-h-[1056px]"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+
+    /* FIX: Pivot coordinate system for absolute elements (page numbers) */
+    position: relative !important;
+
+    /* FIX: Enforce exact page height to capture absolute footers inside the page */
+    min-height: 1056px !important;
+    height: 1056px !important;
+    overflow: hidden !important;
+
+    /* Ensure clean breaks - Avoid breaking inside a single editor page */
+    break-after: page !important;
+    break-inside: avoid !important;
+  }
+
+  /* Explicitly reset HTML and BODY for print to prevent top-shifts */
+  html,
+  body {
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Editor content specific overrides */
+  /* We use higher specificity (body .ProseMirror) to override the 'div[class*="p-8"]' rule above */
+  body .ProseMirror-focused,
+  body .ProseMirror {
+    /* Match the screen padding (p-8 = 2rem = 32px) to ensure margins appear in print */
+    padding: 32px !important;
+    margin: 0 !important;
+    /* Ensure no auto centering or offsets */
     box-shadow: none !important;
     border: none !important;
-    margin: 0 !important;
-    page-break-after: always;
-    background: white !important;
-  }
-  
-  .document-page:last-child {
-    page-break-after: avoid;
-  }
-
-  .tiptap-editor,
-  .tiptap-editor *,
-  .document-header,
-  .document-footer,
-  .page-number {
-    color: #000000 !important;
+    background: transparent !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    color: black !important;
   }
 }
 
-@page {
-  size: letter;
+/* Fix Table Width - Ensure it spans full content area */
+.ProseMirror table {
+  display: table !important;
+  border-collapse: collapse;
   margin: 0;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
 }
 
-/* Table bubble menu */
-.table-menu {
-  @apply flex items-center gap-1 p-1 bg-popover border border-border rounded-lg shadow-lg;
-}
-
-.table-menu button {
-  @apply h-8 px-2 text-xs rounded hover:bg-accent transition-colors flex items-center gap-1;
-}
-
-.table-menu button:hover {
-  @apply bg-accent;
-}
-
-.table-menu .separator {
-  @apply w-px h-6 bg-border mx-1;
+.ProseMirror td,
+.ProseMirror th {
+  border: 2px solid hsl(var(--editor-text));
+  /* Thicker borders for legal/professional look */
+  box-sizing: border-box;
+  min-width: 1em;
+  padding: 3px 5px;
+  position: relative;
+  vertical-align: top;
 }

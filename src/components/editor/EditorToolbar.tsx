@@ -1,17 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Editor } from '@tiptap/react';
-import { 
-  Undo2, 
-  Redo2, 
-  Bold, 
-  Italic, 
-  Underline, 
+import {
+  Undo2,
+  Redo2,
+  Bold,
+  Italic,
+  Underline,
   Strikethrough,
   ChevronDown,
   Table,
   Moon,
   Sun,
-  FileDown
+  FileDown,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,17 +38,17 @@ const HEADINGS = [
   { label: 'Heading 6', value: 'heading', level: 6 },
 ];
 
-const ToolbarButton = ({ 
-  onClick, 
-  disabled = false, 
-  active = false, 
-  children, 
-  title 
-}: { 
-  onClick: () => void; 
-  disabled?: boolean; 
-  active?: boolean; 
-  children: React.ReactNode; 
+const ToolbarButton = ({
+  onClick,
+  disabled = false,
+  active = false,
+  children,
+  title
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  children: React.ReactNode;
   title: string;
 }) => (
   <button
@@ -92,13 +96,13 @@ const Dropdown = ({
       <button
         type="button"
         onClick={() => onOpenChange(!open)}
-        className="h-8 px-2 flex items-center gap-1 rounded hover:bg-accent transition-colors text-sm"
+        className="h-8 px-2 flex items-center gap-1 rounded hover:bg-accent transition-colors text-sm text-foreground"
       >
         {trigger}
         <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 min-w-[140px] bg-popover border border-border rounded-md shadow-lg py-1">
+        <div className="absolute top-full left-0 mt-1 z-50 min-w-[140px] bg-popover text-popover-foreground border border-border rounded-md shadow-lg py-1">
           {children}
         </div>
       )}
@@ -160,7 +164,7 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
   const canRedo = editor.can().redo();
 
   return (
-    <div className="no-print flex items-center gap-1 px-3 py-2 bg-toolbar border-b border-toolbar-border flex-wrap">
+    <div className="no-print flex items-center gap-1 px-3 py-2 bg-toolbar text-foreground border-b border-toolbar-border flex-wrap">
       {/* Theme Toggle - Extreme Left */}
       <ToolbarButton
         onClick={onToggleTheme}
@@ -203,7 +207,7 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
               "px-3 py-2 text-sm cursor-pointer hover:bg-accent",
               ((h.value === 'paragraph' && !editor.isActive('heading')) ||
                 (h.value === 'heading' && editor.isActive('heading', { level: h.level }))) &&
-                "bg-accent font-medium"
+              "bg-accent font-medium"
             )}
           >
             {h.label}
@@ -261,6 +265,38 @@ const EditorToolbar: React.FC<ToolbarProps> = ({ editor, theme, onToggleTheme, o
         title="Strikethrough"
       >
         <Strikethrough className="h-4 w-4" />
+      </ToolbarButton>
+
+      <div className="w-px h-6 bg-border mx-1" />
+
+      {/* Alignment Buttons */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+        active={editor.isActive({ textAlign: 'left' })}
+        title="Align Left"
+      >
+        <AlignLeft className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+        active={editor.isActive({ textAlign: 'center' })}
+        title="Align Center"
+      >
+        <AlignCenter className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+        active={editor.isActive({ textAlign: 'right' })}
+        title="Align Right"
+      >
+        <AlignRight className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+        active={editor.isActive({ textAlign: 'justify' })}
+        title="Justify"
+      >
+        <AlignJustify className="h-4 w-4" />
       </ToolbarButton>
 
       <div className="w-px h-6 bg-border mx-1" />
